@@ -1,12 +1,10 @@
 from tensorflow import keras
 import tensorflow as tf
-from tensorflow.keras.callbacks import ModelCheckpoint
 
 from config import config_title as config
 from text_utils import Vectorization
 from data_utils import load_captions_data, train_val_split, make_dataset, read_image
 from models import get_cnn_model, TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel
-
 
 """ Preparing the dataset"""
 captions_mapping, text_data = load_captions_data(config['train_annotations_file'], split_char=config['split_char'])
@@ -34,14 +32,17 @@ decoder = TransformerDecoderBlock(embed_dim=config['embed_dim'], ff_dim=config['
 caption_model = ImageCaptioningModel(cnn_model=cnn_model, encoder=encoder, decoder=decoder)
 
 """ Training """
+# loss function
 cross_entropy = keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction="none")
+# callbacks
 early_stopping = keras.callbacks.EarlyStopping(patience=20, restore_best_weights=True)
-checkpoint_callback = ModelCheckpoint(filepath="./checkpoints/callbacks", monitor="val_loss", save_best_only=False, verbose=0)
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=config['tensorboard_logs_dir'], histogram_freq=1)
+checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath="./checkpoints/callbacks", monitor="val_loss", verbose=0)
+tensorboard_callback = keras.callbacks.TensorBoard(log_dir=config['tensorboard_logs_dir'], histogram_freq=1)
+# compile model
 caption_model.compile(optimizer=keras.optimizers.Adam(), loss=cross_entropy)
-
+# start training loop
 history = caption_model.fit(train_dataset, epochs=100,
                             validation_data=valid_dataset,
                             callbacks=[early_stopping, checkpoint_callback, tensorboard_callback])
-
+# save model weights
 caption_model.save_weights(config['weights_path'], save_format='tf')

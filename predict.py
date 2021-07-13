@@ -1,8 +1,10 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import numpy as np
 from nltk.translate.bleu_score import sentence_bleu
 from train import vectorization, index_lookup, vocab_size, valid_data
-from config import config
+from config import config_description as config
 from models import TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel, get_cnn_model
 from data_utils import read_image, load_captions_data
 
@@ -14,7 +16,7 @@ decoder = TransformerDecoderBlock(embed_dim=config['embed_dim'], ff_dim=config['
                                   num_heads=config['num_attention_heads'], seq_len=config['seq_length'],
                                   vocab_size=vocab_size)
 caption_model = ImageCaptioningModel(cnn_model=cnn_model, encoder=encoder, decoder=decoder)
-caption_model.load_weights(f"{config['weights']}/description")
+caption_model.load_weights(config['weights_path'])
 
 
 def generate_caption(model, sample):
@@ -67,14 +69,14 @@ def test_on_sample(model):
 
 
 def eval_on_test_set(model):
-    captions_imgs, texts = load_captions_data(config['test_annotations_file'], split_char=',')
+    captions_imgs, texts = load_captions_data(config['test_annotations_file'], split_char=config['split_char'])
     sum_bleu_score = 0
-    for sample in captions_imgs.items():
+    for i, sample in enumerate(captions_imgs.items()):
         sample_txt, pred_txt = generate_caption(model, sample)
         bleu_score = sentence_bleu([sample_txt[0].split()], pred_txt.split(), weights=(1, 0, 0, 0))
         if bleu_score > 0:
             sum_bleu_score += bleu_score
-            print(bleu_score)
+            print(f'{i}: {bleu_score}')
     avg_bleu = sum_bleu_score / len(captions_imgs.items())
     return avg_bleu
 

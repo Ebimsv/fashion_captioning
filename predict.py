@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 from nltk.translate.bleu_score import sentence_bleu
 from train import vectorization, index_lookup, vocab_size, valid_data
-from config import config_description as config
+from config import config
 from models import TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel, get_cnn_model
 from data_utils import read_image, load_captions_data
 
@@ -16,7 +16,7 @@ decoder = TransformerDecoderBlock(embed_dim=config['embed_dim'], ff_dim=config['
                                   num_heads=config['num_attention_heads'], seq_len=config['seq_length'],
                                   vocab_size=vocab_size)
 caption_model = ImageCaptioningModel(cnn_model=cnn_model, encoder=encoder, decoder=decoder)
-caption_model.load_weights(config['weights_path'])
+caption_model.load_weights(f"{config['weights_dir']}{config['dataset']}/{config['num_attention_heads']}_heads/")
 
 
 def generate_caption(model, sample):
@@ -69,7 +69,7 @@ def test_on_sample(model):
 
 
 def eval_on_test_set(model):
-    captions_imgs, texts = load_captions_data(config['test_annotations_file'], split_char=config['split_char'])
+    captions_imgs, texts = load_captions_data(f"{config['annotations_dir']}test_{config['dataset']}.txt")
     sum_bleu_score = 0
     for i, sample in enumerate(captions_imgs.items()):
         sample_txt, pred_txt = generate_caption(model, sample)

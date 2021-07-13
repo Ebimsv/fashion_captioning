@@ -4,7 +4,7 @@ import tensorflow as tf
 from config import config
 
 
-def load_captions_data(filename, split_char):
+def load_captions_data(filename, split_char=','):
     with open(filename) as caption_file:
         caption_mapping = {}
         text_data = []

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from config import config
+from .config import config
 
 
 def load_captions_data(filename, split_char=','):

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Image Captioning</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='static/main.css'>
+</head>
+
+<body>
+    <div id="container-div">
+        <form id="main-form" action="{{ url_for('infer') }}" method="post" autocomplete="off" enctype="multipart/form-data">
+            <div id="image-box">
+            </div>
+            <div id="buttons">
+                <label  for="file-upload">
+                    <div id="upload-btn">Upload</div>
+                </label>
+                <input style="margin: 20px; display: none;" name="image" type="file" id="file-upload" accept="image/x-png,image/gif,image/jpeg">
+                <input type="submit" name="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var img = document.createElement("img");
+                img.setAttribute("src", e.target.result);
+                document.getElementById("image-box").appendChild(img);
+                img.style.width = "500px";
+                img.style.height = "500px";
+
+            }
+            reader.readAsDataURL(input.files[0]); // convert to base64 string
+        }
+    }
+    $("#file-upload").change(function () {
+        readURL(this);
+    });
+</script>
+
+</html>

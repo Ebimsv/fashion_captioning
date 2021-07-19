@@ -18,6 +18,6 @@ def preprocess(y_true, y_pred):
 
     bleu_scores = []
     for index, _ in enumerate(y_pred):
-        bleu_scores.append([sentence_bleu([y_true[index]], y_pred[index])])
+        bleu_scores.append([sentence_bleu([y_true[index]], y_pred[index], weights=(0.5, 0.5, 0, 0))])
 
     return np.mean(bleu_scores).astype(np.float32)

@@ -1,0 +1,58 @@
+#main-form {
+    position: relative;
+}
+#container-div {
+    position: relative;
+    margin: 0 auto;
+    display: block;
+    width: fit-content;
+}
+#image-box {
+    width: 500px;
+    height: 500px;
+    box-shadow: 0 0 3px rgb(170, 170, 170);
+}
+#image-box img {
+    position: relative;
+    display: block;
+    width: 500px;
+    height: 500px;
+}
+#buttons {
+    display: flex;
+    justify-content: center;
+    margin: 20px;
+}
+
+#buttons #upload-btn{
+    position: relative;
+    width: fit-content;
+    background-color: #1080e9;
+    border: none;
+    border-radius: 5px;
+    color: #ffffff;
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+    font-family: monospace;
+}
+#buttons input[type='submit']{
+    position: relative;
+    width: fit-content;
+    background-color: #1080e9;
+    border: none;
+    border-radius: 5px;
+    color: #ffffff;
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+    font-family: monospace;
+}
+
+#results-box {
+    width: 500px;
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+    padding: 20px 0;
+}

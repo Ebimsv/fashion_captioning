@@ -2,7 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.applications import efficientnet
-from config import config
+from .config import config
+from .utils import calculate_bleu
 
 
 def get_cnn_model():
@@ -129,6 +130,7 @@ class ImageCaptioningModel(keras.Model):
         self.decoder = decoder
         self.loss_tracker = keras.metrics.Mean(name="loss")
         self.acc_tracker = keras.metrics.Mean(name="accuracy")
+        self.bleu_tracker = keras.metrics.Mean(name="bleu")
         self.num_captions_per_image = num_captions_per_image
 
     def calculate_loss(self, y_true, y_pred, mask):
@@ -137,67 +139,100 @@ class ImageCaptioningModel(keras.Model):
         loss *= mask
         return tf.reduce_sum(loss) / tf.reduce_sum(mask)
 
-    def calculate_accuracy(self, y_true, y_pred, mask):
+    @staticmethod
+    def calculate_accuracy(y_true, y_pred, mask):
         accuracy = tf.equal(y_true, tf.argmax(y_pred, axis=2))
         accuracy = tf.math.logical_and(mask, accuracy)
         accuracy = tf.cast(accuracy, dtype=tf.float32)
         mask = tf.cast(mask, dtype=tf.float32)
         return tf.reduce_sum(accuracy) / tf.reduce_sum(mask)
 
-    def _compute_loss_and_acc(self, batch_data, training=True):
+    @staticmethod
+    def calculate_bleu(y_true, y_pred):
+        bleu = calculate_bleu(y_true, y_pred)
+        bleu = tf.cast(bleu, dtype=tf.float32)
+        return bleu
+
+    def train_step(self, batch_data):
         batch_img, batch_seq = batch_data
         batch_loss = 0
         batch_acc = 0
 
-        # 1. Get image embeddings
-        img_embed = self.cnn_model(batch_img)
+        with tf.GradientTape() as tape:
+            # 3. Pass image embeddings to encoder
 
-        for i in range(self.num_captions_per_image):
-            with tf.GradientTape() as tape:
-                # 3. Pass image embeddings to encoder
-                encoder_out = self.encoder(img_embed, training=training)
+            x = self.cnn_model(batch_img)
+            encoder_out = self.encoder(x, training=True)
 
-                batch_seq_inp = batch_seq[:, i, :-1]
-                batch_seq_true = batch_seq[:, i, 1:]
+            batch_seq_inp = batch_seq[:, 0, :-1]
+            batch_seq_true = batch_seq[:, 0, 1:]
 
-                # 4. Compute the mask for the input sequence
-                mask = tf.math.not_equal(batch_seq_inp, 0)
+            # 4. Compute the mask for the input sequence
+            mask = tf.math.not_equal(batch_seq_inp, 0)
 
-                # 5. Pass the encoder outputs, sequence inputs along with
-                # mask to the decoder
-                batch_seq_pred = self.decoder(batch_seq_inp, encoder_out,
-                                              training=training, mask=mask)
+            # 5. Pass the encoder outputs, sequence inputs along with
+            # mask to the decoder
+            batch_seq_pred = self.decoder(batch_seq_inp, encoder_out,
+                                          training=True, mask=mask)
 
-                # 6. Calculate loss and accuracy
-                loss = self.calculate_loss(batch_seq_true, batch_seq_pred, mask)
-                acc = self.calculate_accuracy(batch_seq_true, batch_seq_pred, mask)
+            # 6. Calculate loss and accuracy
+            loss = self.calculate_loss(batch_seq_true, batch_seq_pred, mask)
+            acc = self.calculate_accuracy(batch_seq_true, batch_seq_pred, mask)
+            bleu = self.calculate_bleu(batch_seq_true, batch_seq_pred)
 
-                # 7. Update the batch loss and batch accuracy
-                batch_loss += loss
-                batch_acc += acc
+            # 7. Update the batch loss and batch accuracy
+            batch_loss += loss
+            batch_acc += acc
 
-            # 8. Get the list of all the trainable weights
-            train_vars = (self.encoder.trainable_variables + self.decoder.trainable_variables)
+        # 8. Get the list of all the trainable weights
+        train_vars = (self.encoder.trainable_variables + self.decoder.trainable_variables)
 
-            # 9. Get the gradients
-            grads = tape.gradient(loss, train_vars)
+        # 9. Get the gradients
+        grads = tape.gradient(loss, train_vars)
 
-            # 10. Update the trainable weights
-            self.optimizer.apply_gradients(zip(grads, train_vars))
+        # 10. Update the trainable weights
+        self.optimizer.apply_gradients(zip(grads, train_vars))
 
-        return batch_loss, batch_acc / float(self.num_captions_per_image)
-
-    def train_step(self, batch_data):
-        loss, acc = self._compute_loss_and_acc(batch_data)
         self.loss_tracker.update_state(loss)
         self.acc_tracker.update_state(acc)
-        return {"loss": self.loss_tracker.result(), "acc": self.acc_tracker.result()}
+        self.bleu_tracker.update_state(bleu)
+        return {"loss": self.loss_tracker.result(),
+                "acc": self.acc_tracker.result(),
+                'bleu': self.bleu_tracker.result()
+                }
 
     def test_step(self, batch_data):
-        loss, acc = self._compute_loss_and_acc(batch_data, training=False)
+        batch_img, batch_seq = batch_data
+
+        # 1. Get image embeddings
+
+        # 3. Pass image embeddings to encoder
+
+        x = self.cnn_model(batch_img)
+        encoder_out = self.encoder(x, training=True)
+
+        batch_seq_inp = batch_seq[:, 0, :-1]
+        batch_seq_true = batch_seq[:, 0, 1:]
+
+        # 4. Compute the mask for the input sequence
+        mask = tf.math.not_equal(batch_seq_inp, 0)
+
+        # 5. Pass the encoder outputs, sequence inputs along with
+        # mask to the decoder
+        batch_seq_pred = self.decoder(batch_seq_inp, encoder_out,
+                                      training=True, mask=mask)
+
+        # 6. Calculate loss and accuracy
+        loss = self.calculate_loss(batch_seq_true, batch_seq_pred, mask)
+        acc = self.calculate_accuracy(batch_seq_true, batch_seq_pred, mask)
+        bleu = self.calculate_bleu(batch_seq_true, batch_seq_pred)
         self.loss_tracker.update_state(loss)
         self.acc_tracker.update_state(acc)
-        return {"loss": self.loss_tracker.result(), "acc": self.acc_tracker.result()}
+        self.bleu_tracker.update_state(bleu)
+        return {"loss": self.loss_tracker.result(),
+                "acc": self.acc_tracker.result(),
+                'bleu': self.bleu_tracker.result()
+                }
 
     @property
     def metrics(self):

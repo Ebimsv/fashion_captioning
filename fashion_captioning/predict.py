@@ -1,5 +1,3 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import numpy as np
 from nltk.translate.bleu_score import sentence_bleu
@@ -7,6 +5,8 @@ from train import vectorization, index_lookup, vocab_size, valid_data
 from config import config
 from models import TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel, get_cnn_model
 from data_utils import read_image, load_captions_data
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 """Models"""
 cnn_model = get_cnn_model()
@@ -82,5 +82,14 @@ def eval_on_test_set(model):
 
 
 if __name__ == '__main__':
-    avg_bleu = eval_on_test_set(caption_model)
-    print(f'avg_blue is {avg_bleu}')
+    # avg_bleu = eval_on_test_set(caption_model)
+    # print(f'avg_blue is {avg_bleu}')
+    true_txt, pred_txt = generate_caption(model=caption_model, sample=('images/81096.jpg', ['<start> animal print ruffle sleeve top <end>']))
+    print('Individual 1-gram: %f' % sentence_bleu(true_txt, pred_txt, weights=(1, 0, 0, 0)))
+    print('Individual 2-gram: %f' % sentence_bleu(true_txt, pred_txt, weights=(0, 1, 0, 0)))
+    print('Individual 3-gram: %f' % sentence_bleu(true_txt, pred_txt, weights=(0, 0, 1, 0)))
+    print('cumulative 4-gram: %f' % sentence_bleu(true_txt, pred_txt, weights=(0.25, 0.25, 0.25, 0.25)))
+
+    print("PREDICTED CAPTION:", end=" ")
+    print(pred_txt.replace("<start> ", "").replace(" <end>", "").strip())
+    print("reference text :", true_txt)

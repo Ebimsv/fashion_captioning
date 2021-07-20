@@ -16,9 +16,11 @@ def index():
 
 @app.route('/infer', methods=['POST', 'GET'])
 def infer():
+    # 57616, 99664, 99000, 81682, 98993
     if request.method == 'POST' and request.form['submit'] == 'Submit':
         image = Image.open(request.files['image'])
-        result = caption_image(image)
+        filename = image.fp.filename
+        result = caption_image(image, filename)
         image = bytes_img(image)
         return render_template('results.html', result=result, image=image)
 

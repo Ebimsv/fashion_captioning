@@ -5,9 +5,12 @@ from PIL import Image
 import tensorflow as tf
 from fashion_captioning import text_utils
 from fashion_captioning.config import config
-from fashion_captioning.train import index_lookup, vocab_size, vectorization
+from fashion_captioning.evaluate import all_text_data
+from fashion_captioning.train import index_lookup, vocab_size, vectorization, train_data, valid_data, captions_mapping
 from fashion_captioning.models import TransformerEncoderBlock, \
     TransformerDecoderBlock, ImageCaptioningModel, get_cnn_model
+
+all_data_list = list(train_data.keys()) + all_text_data + list(valid_data.keys())
 
 
 def bytes_img(image: Image):
@@ -29,7 +32,10 @@ caption_model = ImageCaptioningModel(cnn_model=cnn_model, encoder=encoder, decod
 caption_model.load_weights(f"{config['weights_dir']}{config['dataset']}/{config['num_attention_heads']}_heads/")
 
 
-def caption_image(image):
+def caption_image(image, filename):
+    './fashion_captioning/images/49300.jpg'
+    reference_text_idx = all_data_list[all_data_list.index(f"./fashion_captioning/images/{filename}")]
+    reference_text = captions_mapping[reference_text_idx][0]
     # img = np.array(image)
     # img = tf.convert_to_tensor(img)
     img = tf.keras.preprocessing.image.img_to_array(image)
@@ -55,4 +61,5 @@ def caption_image(image):
             break
         decoded_caption += " " + sampled_token
     decoded_caption = decoded_caption.replace("<start> ", "").replace(" <end>", "").strip()
-    return {'Text': decoded_caption}
+    reference_text = reference_text.replace("<start> ", "").replace(" <end>", "").strip()
+    return {'Predicted': decoded_caption, 'True': reference_text}

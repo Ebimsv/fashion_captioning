@@ -1,12 +1,12 @@
 import os
-
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.keras as keras
 
-from text_utils import Vectorization
-from data_utils import load_captions_data, make_dataset
-from models import get_cnn_model, TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel
-from config import config
+from .text_utils import Vectorization
+from .data_utils import load_captions_data, make_dataset
+from .models import get_cnn_model, TransformerEncoderBlock, TransformerDecoderBlock, ImageCaptioningModel
+from .config import config
 
 """ Preparing the dataset"""
 captions_mapping, text_data = load_captions_data(f"{config['annotations_dir']}test_{config['dataset']}.txt")

@@ -15,7 +15,8 @@
                 <img src="data:image/jpeg;base64,{{ image }}"> 
             </div>
             <div id="results-box">
-                <a>{{result['Text']}}</a>
+                <a>Predicted Text: {{result['Predicted']}}</a><br>
+                <a>Original Text: {{result['True']}}</a>
             </div>
         </form>
     </div>

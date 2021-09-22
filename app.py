@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request
 from PIL import Image
-from module import bytes_img, caption_image
+from module import bytes_img, caption_image, find_similar_images
 import numpy as np
-
 
 app = Flask(__name__)
 
@@ -23,6 +22,14 @@ def infer():
         result = caption_image(image, filename)
         image = bytes_img(image)
         return render_template('results.html', result=result, image=image)
+
+
+@app.route('/sentence2image', methods=['POST', 'GET'])
+def sentence2image():
+    if request.method == 'POST' and request.form['submit'] == 'Recommend images':
+        sentence = request.form['predicted_text']
+        results = find_similar_images(sentence, 3)
+        return render_template('word2vec.html', results=results)
 
 
 if __name__ == '__main__':

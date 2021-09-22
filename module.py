@@ -2,6 +2,7 @@ import numpy as np
 import base64
 import io
 from PIL import Image
+from scipy.spatial import distance
 import tensorflow as tf
 from fashion_captioning import text_utils
 from fashion_captioning.config import config
@@ -9,6 +10,7 @@ from fashion_captioning.evaluate import all_text_data
 from fashion_captioning.train import index_lookup, vocab_size, vectorization, train_data, valid_data, captions_mapping
 from fashion_captioning.models import TransformerEncoderBlock, \
     TransformerDecoderBlock, ImageCaptioningModel, get_cnn_model
+from word2vec.w2v_with_idf import weighted_w2v_model
 
 all_data_list = list(train_data.keys()) + all_text_data + list(valid_data.keys())
 
@@ -62,4 +64,13 @@ def caption_image(image, filename):
         decoded_caption += " " + sampled_token
     decoded_caption = decoded_caption.replace("<start> ", "").replace(" <end>", "").strip()
     reference_text = reference_text.replace("<start> ", "").replace(" <end>", "").strip()
+
     return {'Predicted': decoded_caption, 'True': reference_text}
+
+
+def find_similar_images(sentence, num_results=3):
+    results = []
+    output = weighted_w2v_model(sentence, num_results=num_results)
+    for heat_map, image, text, distance in output:
+        results.append((bytes_img(heat_map), bytes_img(image), text, distance))
+    return results

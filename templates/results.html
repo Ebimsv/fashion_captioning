@@ -18,7 +18,14 @@
                 <a>Predicted Text: {{result['Predicted']}}</a><br>
                 <a>Original Text: {{result['True']}}</a>
             </div>
-        </form>
+            <form id="word2vec-form" action="{{ url_for('sentence2image') }}" method="post" autocomplete="off" enctype="multipart/form-data">
+                <div id="buttons">
+                    {% set predicted = result['Predicted'] %}
+                    <input type="hidden" name="predicted_text" value='{{predicted}}'>
+                    <input style="margin: 20px; display: none;" name="image" type="file" id="file-upload" accept="image/x-png,image/gif,image/jpeg">
+                    <input type="submit" name="submit" value="Recommend images">
+                </div>
+            </form>
     </div>
 </body>
 

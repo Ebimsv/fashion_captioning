@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+</style>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Image Captioning</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='static/main.css'>
+</head>
+
+<body>
+    {% for heat_map, image, text, distance in results %}
+    <div class="w2v-results-container">
+        <div class="heat-map-container">
+            <img class="heat-map" src="data:image/jpeg;base64,{{ heat_map}}">
+        </div>
+        <div class="image-text-container">
+            <img class="image" src="data:image/jpeg;base64,{{ image }}">
+            <a style="font-size: 20px; font-family: monospace;">Title : {{text}}</a>
+            <a style="font-size: 20px; font-family: monospace;">Eucludian distance: {{distance}}</a>
+        </div>
+    </div>
+    {%endfor%}
+</body>
